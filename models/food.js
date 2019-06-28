@@ -9,5 +9,5 @@ const foodSchema = new mongoose.Schema({
 
 module.exports = {
   schema: foodSchema,
-  model: mongoose.model("Model " , foodSchema , "food")
+  model: mongoose.model("foodSchema " , foodSchema , "food")
 };

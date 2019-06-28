@@ -18,5 +18,5 @@ const restaurantSchema = new mongoose.Schema({
 
 module.exports = {
   schema: restaurantSchema,
-  model: mongoose.model("restaurant", restaurantSchema)
+  model: mongoose.model("restaurantSchema" , restaurantSchema , "restaurant")
 };

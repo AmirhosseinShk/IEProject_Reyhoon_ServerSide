@@ -8,5 +8,5 @@ const addressSchema = new mongoose.Schema({
 
 module.exports = {
     schema: addressSchema,
-    model: mongoose.model("address", addressSchema)
+    model: mongoose.model("addressSchema " ,addressSchema , "address")
 };
