@@ -16,6 +16,6 @@ app.use(express.json());
 
 //routers
 const restaurant = require("./routes/restaurant.js");
-app.use("/api/restaurant", restaurant);
+app.use("/api/restaurants", restaurant);
 
 app.listen(port, () => console.log(`listening on port ${port}!`));

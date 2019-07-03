@@ -1,7 +1,6 @@
 const express = require("express");
-const food = require("../models/food.js");
-const address = require("../models/address.js");
 const resturant = require("../models/restaurant.js");
+const comments = require("../models/comment.js");
 
 
 const foodRouter = express.Router();
@@ -15,10 +14,13 @@ foodRouter
         if (err) {
           res.send(err);
         }
-        console.log(restaurants[0]);
-        if (restaurants[0].address.area == area) {
-          res.send(restaurants);
+        var correctRest = new Array();
+        for (var i = 0; i < restaurants.length; i++) {
+          if (restaurants[i].address.area == area) {
+            correctRest.push(restaurants[i]);
+          }
         }
+        res.send(correctRest);
       });
     } else {
       var area = req.query.area;
@@ -35,7 +37,6 @@ foodRouter
             if (isArray(categories)) {
               for (var i = 0; i < categories.length; i++) {
                 var find = false;
-                console.log(restaurants[j].categories + ":" + categories[i]);
                 for (var c = 0; c < restaurants[j].categories.length; c++) {
                   if (restaurants[j].categories[c].name == categories[i]) {
                     find = true;
@@ -59,22 +60,103 @@ foodRouter
   })
 
   .get("/:id", (req, res) => {
+    var restName = req.params.id;
+    if (restName != undefined) {
+      resturant.model.find({ 'englishName': restName }, (err, rest) => {
+        if (err) {
+          res.send(err);
+        }
+        var Comments = rest[0].comments;
+        var avgRate = 0;
+        for (var i = 0; i < Comments.length; i++) {
+          avgRate += Comments[i].quality;
+        }
+        avgRate = avgRate / Comments.length;
+        avgRate = avgRate.toFixed(1);
+        rest[0].averageRate = avgRate;
+        res.send(rest);
+      });
+    }
+  })
 
+  .get("/:id/comments", (req, res) => {
+    var restName = req.params.id;
+    if (restName != undefined) {
+      resturant.model.find({ 'englishName': restName })
+        .select({ comments: 1 })
+        .exec(function (err, restComments) {
+          if (err) {
+            res.send(err);
+          }
+          let resComments = new comments.model();
+          resComments = restComments[0];
+          resComments.comments.sort(compare);
+          res.send(restComments);
+        });
+    }
+  })
+
+  .post("/:id/comments", (req, res) => {
+    var restName = req.params.id;
+    if (restName != undefined) {
+      resturant.model.find({ 'englishName': restName })
+        .select({ comments: 1 })
+        .exec(function (err, restComments) {
+          if (err) {
+            res.send(err);
+          }
+          let commentsObject = new comments.model();
+          commentsObject.author = req.body.author;
+          commentsObject.quality = req.body.quality;
+          commentsObject.packaging = req.body.packaging;
+          commentsObject.deliveryTime = req.body.deliveryTime;
+          commentsObject.text = req.body.text;
+          commentsObject.created_at = req.body.created_at;
+          restComments[0].comments.push(commentsObject);
+          resturant.model.findOneAndUpdate({ 'englishName': restName }, { $set: { comments: restComments[0].comments } }, { new: true }, (err, doc) => {
+            if (err) {
+              console.log("Something wrong when updating data!");
+            }
+            console.log(doc);
+          });
+          //rest.save();
+          res.json({
+            message: "success"
+          });
+        });
+    } else {
+      res.json({
+        message: "Resturant Name undefined"
+      });
+    }
   })
 
   .post("/", (req, res) => {
-    let foodObject = new food.model();
-    console.log("here");
-    console.log(req.body);
-    foodObject.name = req.body.name;
-    foodObject.price = req.body.price;
-    foodObject.description = req.body.description;
-    foodObject.foodSet = req.body.foodSet;
-    foodObject.save();
+    let resturantObject = resturant.model();
+    resturantObject.name = req.body.name;
+    resturantObject.logo = req.body.logo;
+    resturantObject.openingTime = req.body.openingTime;
+    resturantObject.closingTime = req.body.closingTime;    
+    resturantObject.averageRate = req.body.averageRate;
+    resturantObject.address = req.body.address;
+    resturantObject.categories = req.body.categories;
+    resturantObject.foods = req.body.foods;
+    resturantObject.comments = req.body.comments;
+    resturantObject.save();
     res.json({
       message: "success"
     });
   });
+
+function compare(a, b) {
+  if (a.created_at < b.created_at) {
+    return 1;
+  }
+  if (a.created_at > b.created_at) {
+    return -1;
+  }
+  return 0;
+}
 
 
 module.exports = foodRouter;
