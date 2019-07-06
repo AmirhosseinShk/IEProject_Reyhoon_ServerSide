@@ -6,8 +6,15 @@ const comments = require("../models/comment.js");
 const foodRouter = express.Router();
 
 foodRouter
+  .use(function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+  })
+
   .get("/", (req, res) => {
     var categories = req.query.category;
+    console.log(categories);
     if (categories == undefined) {
       var area = req.query.area;
       resturant.model.find({}, (err, restaurants) => {
@@ -25,6 +32,8 @@ foodRouter
     } else {
       var area = req.query.area;
       var categories = req.query.category;
+      var restResult = [];
+      console.log(categories);
       isArray = function (a) {
         return (!!a) && (a.constructor === Array);
       };
@@ -35,31 +44,36 @@ foodRouter
         for (var j = 0; j < restaurants.length; j++) {
           if (restaurants[j].address.area == area) {
             if (isArray(categories)) {
+              var find = true;
               for (var i = 0; i < categories.length; i++) {
-                var find = false;
+                var find2 = false;
                 for (var c = 0; c < restaurants[j].categories.length; c++) {
-                  if (restaurants[j].categories[c].name == categories[i]) {
-                    find = true;
+                  if (restaurants[j].categories[c].name == (categories[i])) {
+                    find2 = true;
                   }
                 }
+                if (!find2)
+                  find = false;
               }
               if (find) {
-                res.send(restaurants[j]);
+                restResult.push(restaurants[j]);
               }
             } else {
               for (var c = 0; c < restaurants[j].categories.length; c++) {
                 if (restaurants[j].categories[c].name == categories) {
-                  res.send(restaurants[j]);
+                  restResult.push(restaurants[j]);
                 }
               }
             }
           }
         }
+        res.send(restResult);
       });
     }
   })
 
   .get("/:id", (req, res) => {
+    console.log("hereeeeee2");
     var restName = req.params.id;
     if (restName != undefined) {
       resturant.model.find({ 'englishName': restName }, (err, rest) => {
@@ -136,7 +150,7 @@ foodRouter
     resturantObject.name = req.body.name;
     resturantObject.logo = req.body.logo;
     resturantObject.openingTime = req.body.openingTime;
-    resturantObject.closingTime = req.body.closingTime;    
+    resturantObject.closingTime = req.body.closingTime;
     resturantObject.averageRate = req.body.averageRate;
     resturantObject.address = req.body.address;
     resturantObject.categories = req.body.categories;
